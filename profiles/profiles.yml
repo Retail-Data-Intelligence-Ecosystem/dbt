@@ -1,0 +1,14 @@
+# Set DBT_PROFILES_DIR=./profiles when running dbt locally.
+# Credentials are loaded from environment variables (see .env).
+
+default:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog: "{{ env_var('DBT_DATABRICKS_CATALOG', 'dev') }}"
+      schema: "{{ env_var('DBT_DATABRICKS_SCHEMA', 'silver') }}"
+      host: "{{ env_var('DBT_DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DBT_DATABRICKS_HTTP_PATH') }}"
+      token: "{{ env_var('DBT_DATABRICKS_TOKEN') }}"
+      threads: 4

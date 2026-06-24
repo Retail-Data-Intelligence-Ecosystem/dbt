@@ -1,0 +1,39 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw ingestion tables landed in Databricks
+    database: "{{ env_var('DBT_DATABRICKS_CATALOG', 'dev') }}"
+    schema: "{{ env_var('DBT_RAW_SCHEMA', 'bronze') }}"
+    config:
+      loaded_at_field: _loaded_at
+      freshness:
+        warn_after: { count: 24, period: hour }
+        error_after: { count: 48, period: hour }
+
+    tables:
+      - name: events
+        description: Raw event stream from product/application
+        columns:
+          - name: event_id
+            description: Unique event identifier
+          - name: user_id
+            description: User who triggered the event
+          - name: event_name
+            description: Event type name
+          - name: event_timestamp
+            description: When the event occurred
+          - name: event_properties
+            description: JSON payload with event attributes
+
+      - name: users
+        description: Raw user dimension from source system
+        columns:
+          - name: user_id
+            description: Unique user identifier
+          - name: email
+            description: User email address
+          - name: created_at
+            description: Account creation timestamp
+          - name: country_code
+            description: ISO country code
