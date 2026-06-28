@@ -1,13 +1,18 @@
-# Set DBT_PROFILES_DIR=./profiles when running dbt locally.
-# Credentials are loaded from environment variables (see .env).
+# Dedicated profile for Databricks Free Edition.
+# This file is SAFE TO COMMIT: it contains no secrets, only env_var lookups.
+# Real values (host, http_path, token) live in .env (gitignored).
+#
+# Run locally with:
+#   $env:DBT_PROFILES_DIR = ".\profiles"
+#   dbt debug
 
-default:
+databricks_free:
   target: dev
   outputs:
     dev:
       type: databricks
-      catalog: "{{ env_var('DBT_DATABRICKS_CATALOG', 'dev') }}"
-      schema: "{{ env_var('DBT_DATABRICKS_SCHEMA', 'silver') }}"
+      catalog: "{{ env_var('DBT_DATABRICKS_CATALOG', 'dbt') }}"
+      schema: "{{ env_var('DBT_DATABRICKS_SCHEMA', 'dbt_sch') }}"
       host: "{{ env_var('DBT_DATABRICKS_HOST') }}"
       http_path: "{{ env_var('DBT_DATABRICKS_HTTP_PATH') }}"
       token: "{{ env_var('DBT_DATABRICKS_TOKEN') }}"

@@ -1,0 +1,173 @@
+version: 2
+
+# ---------------------------------------------------------------------------
+# Sources (raw / bronze layer)
+# ---------------------------------------------------------------------------
+sources:
+  - name: raw
+    description: >
+      Raw ecommerce tables. In this learning project they are loaded via `dbt seed`.
+      In production these would be bronze tables from ingestion pipelines.
+    database: "{{ var('catalog') }}"
+    schema: "{{ var('default_schema') }}"
+    tables:
+      - name: customers
+        description: Customer master data from the CRM.
+        columns:
+          - name: customer_id
+            description: Unique customer identifier.
+
+      - name: products
+        description: Product catalog from the merchandising system.
+
+      - name: orders
+        description: Order headers from the order management system.
+
+      - name: order_items
+        description: Line-level order details.
+
+      - name: payments
+        description: Payment records from the payment gateway.
+
+# ---------------------------------------------------------------------------
+# Models (staging → intermediate → marts)
+# ---------------------------------------------------------------------------
+models:
+  # --- staging ---
+  - name: stg_customers
+    description: Cleaned customer records with standardized email and city.
+    columns:
+      - name: customer_id
+        description: Primary key.
+        data_tests:
+          - unique
+          - not_null
+      - name: email
+        description: Lowercased email address.
+        data_tests:
+          - not_null
+
+  - name: stg_products
+    description: Cleaned product catalog with typed prices.
+    columns:
+      - name: product_id
+        data_tests:
+          - unique
+          - not_null
+      - name: unit_price
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 0"
+
+  - name: stg_orders
+    description: Cleaned order headers.
+    columns:
+      - name: order_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['completed', 'pending', 'cancelled']
+
+  - name: stg_order_items
+    description: Cleaned order line items with calculated line totals.
+    columns:
+      - name: order_item_id
+        data_tests:
+          - unique
+          - not_null
+      - name: line_total
+        description: quantity × unit_price (via macro).
+
+  - name: stg_payments
+    description: Cleaned payment records.
+    columns:
+      - name: payment_id
+        data_tests:
+          - unique
+          - not_null
+      - name: amount
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "> 0"
+
+  # --- intermediate ---
+  - name: int_order_items_enriched
+    description: Order items joined with product and order context.
+    columns:
+      - name: order_item_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_customer_orders
+    description: Order-level summary with revenue and payment details.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - order_id
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+
+  # --- marts / core ---
+  - name: dim_customers
+    description: Customer dimension for analytics.
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_products
+    description: Product dimension for analytics.
+    columns:
+      - name: product_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: fct_orders
+    description: Order fact table at order grain.
+    columns:
+      - name: order_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+
+  # --- marts / metrics ---
+  - name: agg_daily_revenue
+    description: Daily revenue KPIs for completed orders.
+    columns:
+      - name: order_date
+        data_tests:
+          - unique
+          - not_null
+
+  - name: agg_customer_lifetime_value
+    description: Customer-level lifetime value metrics.
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null

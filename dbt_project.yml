@@ -1,8 +1,8 @@
-name: 'stream'
+name: 'learning'
 version: '1.0.0'
 config-version: 2
 
-profile: 'default'
+profile: 'databricks_free'
 
 model-paths: ['models']
 analysis-paths: ['analyses']
@@ -11,41 +11,37 @@ seed-paths: ['seeds']
 macro-paths: ['macros']
 snapshot-paths: ['snapshots']
 
+target-path: 'target'
 clean-targets:
   - 'target'
   - 'dbt_packages'
 
+# Catalog and default schema come from profiles.yml (dbt / dbt_sch).
+# Use vars in sources and models when you need other locations.
 vars:
-  incremental_lookback_days: 3
+  catalog: "{{ env_var('DBT_DATABRICKS_CATALOG', 'dbt') }}"
+  default_schema: "{{ env_var('DBT_DATABRICKS_SCHEMA', 'dbt_sch') }}"
 
 models:
-  stream:
+  learning:
     +materialized: view
-    +persist_docs:
-      relation: true
-      columns: true
+    +file_format: delta
 
     staging:
-      +schema: silver
       +tags: ['staging']
 
     intermediate:
       +materialized: table
-      +schema: silver
       +tags: ['intermediate']
 
     marts:
       +materialized: table
-      +schema: gold
       +tags: ['marts']
 
-      core:
-        +tags: ['core', 'daily']
-
-      metrics:
-        +tags: ['metrics', 'daily']
+seeds:
+  learning:
+    +file_format: delta
 
 snapshots:
-  stream:
-    +target_schema: silver
-    +tags: ['snapshots']
+  learning:
+    +file_format: delta

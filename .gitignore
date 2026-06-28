@@ -1,21 +1,60 @@
+# =============================================================
 # dbt
+# =============================================================
+# Compiled SQL, run artifacts, manifest, run_results, catalog
 target/
+# Installed dbt packages (restored via `dbt deps`)
 dbt_packages/
+dbt_internal_packages/
+# dbt logs
 logs/
 *.log
+# dbt run state / partial parse cache
+.user.yml
+# Local-only dbt artifacts
+dbt_modules/
 
+# =============================================================
+# Secrets & credentials  (NEVER commit these)
+# =============================================================
+# Environment variables (Databricks host, http_path, token, etc.)
+.env
+.env.*
+!.env.example
+# dbt Cloud CLI config (contains service token)
+dbt_cloud.yml
+# Local / personal profiles
+profiles/profiles.local.yml
+profiles/.user.yml
+profiles.local.yml
+# Databricks CLI config / tokens
+.databrickscfg
+
+# =============================================================
 # Python
+# =============================================================
 .venv/
+venv/
+env/
 __pycache__/
 *.py[cod]
+*.egg-info/
 .Python
+.pytest_cache/
+.ipynb_checkpoints/
 
-# Secrets
-.env
-profiles/profiles.local.yml
-*.vsix
-
-# OS / IDE
-.DS_Store
-.idea/
+# =============================================================
+# Editor / IDE
+# =============================================================
 .vscode/
+.idea/
+*.vsix
+*.swp
+*.swo
+
+# =============================================================
+# OS
+# =============================================================
+.DS_Store
+Thumbs.db
+desktop.ini

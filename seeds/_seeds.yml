@@ -1,0 +1,52 @@
+version: 2
+
+seeds:
+  - name: customers
+    description: Raw customer records (simulates bronze layer for learning).
+    columns:
+      - name: customer_id
+        description: Primary key for customers.
+        data_tests:
+          - unique
+          - not_null
+      - name: email
+        description: Customer email address.
+
+  - name: products
+    description: Raw product catalog.
+    columns:
+      - name: product_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: orders
+    description: Raw order headers.
+    columns:
+      - name: order_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('customers')
+                field: customer_id
+
+  - name: order_items
+    description: Raw order line items.
+    columns:
+      - name: order_item_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: payments
+    description: Raw payment transactions.
+    columns:
+      - name: payment_id
+        data_tests:
+          - unique
+          - not_null

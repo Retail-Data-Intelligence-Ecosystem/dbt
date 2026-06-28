@@ -1,0 +1,6 @@
+customer_id,customer_name,email,city,signup_date
+1,Alice Sharma,alice@email.com,Mumbai,2024-01-15
+2,Bob Kumar,bob@email.com,Delhi,2024-02-01
+3,Carol Reddy,carol@email.com,Bangalore,2024-03-10
+4,David Patel,david@email.com,Pune,2024-04-05
+5,Eva Singh,eva@email.com,Mumbai,2024-05-20

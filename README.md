@@ -1,66 +1,63 @@
-# stream — dbt on Databricks
+# learning — E-Commerce dbt on Databricks
 
-Heavy data engineering dbt project for event/stream analytics on Databricks.
+Hands-on dbt project with dummy retail data. Demonstrates seeds, sources, staging, intermediate, marts, tests, macros, snapshots, packages, and analyses.
 
-## Architecture
+## Data flow
 
 ```
-dev.bronze (raw)
-  → dev.silver (staging + intermediate)
-  → dev.gold   (marts)
+seeds (raw CSVs)
+  → staging (views)
+  → intermediate (tables)
+  → marts/core + marts/metrics (tables)
 ```
 
-### Models
+## Models
 
 | Layer | Model | Purpose |
 |-------|-------|---------|
-| staging | `stg_events`, `stg_users` | Source-aligned cleaning |
-| intermediate | `int_events_deduped` | Deduplicate events |
-| intermediate | `int_user_sessions` | 30-min sessionization |
-| marts/core | `dim_users` | User dimension |
-| marts/core | `fct_events` | Incremental Delta fact |
-| marts/metrics | `agg_daily_metrics` | Daily KPI rollups |
+| staging | `stg_customers`, `stg_products`, `stg_orders`, `stg_order_items`, `stg_payments` | Clean raw data |
+| intermediate | `int_order_items_enriched`, `int_customer_orders` | Joins and order-level logic |
+| marts/core | `dim_customers`, `dim_products`, `fct_orders` | Dimensions and facts |
+| marts/metrics | `agg_daily_revenue`, `agg_customer_lifetime_value` | KPI rollups |
 
-## Setup
+## dbt features included
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+| Feature | Where |
+|---------|-------|
+| Seeds | `seeds/*.csv` + `seeds/_seeds.yml` |
+| Sources + model docs + tests | `models/_ecommerce.yml` (combined) |
+| Generic tests | `unique`, `not_null`, `relationships`, `accepted_values` |
+| Package tests | `dbt_utils` in `models/_ecommerce.yml` |
+| Custom test | `tests/assert_positive_daily_revenue.sql` |
+| Macros | `macros/audit_columns.sql`, `macros/line_total.sql` |
+| Snapshots | `snapshots/snap_customers.sql` |
+| Analyses | `analyses/top_customers_by_revenue.sql` |
+| Packages | `packages.yml` → `dbt-labs/dbt_utils` |
 
-cp .env.example .env
+## Run order
 
-set -a && source .env && set +a
-export DBT_PROFILES_DIR=./profiles
-```
+Load credentials first (dbt does **not** read `.env` automatically):
 
-## Before first run
-
-1. Bootstrap raw tables — run `analyses/bootstrap_bronze_tables.sql` in Databricks SQL.
-2. Or point `models/staging/_sources.yml` at your existing bronze tables.
-
-## Run
-
-Run each command on its own line (do not copy inline comments):
-
-```bash
+```powershell
+. .\load-env.ps1
 dbt debug
 dbt deps
+dbt seed
 dbt run
-dbt run --select staging+
-dbt run --select tag:daily
 dbt test
 dbt snapshot
+dbt docs generate
+dbt docs serve
 ```
 
-## Unity Catalog
+Run only staging and downstream:
 
-This workspace uses Unity Catalog (Hive Metastore is disabled). Configured via `.env`:
+```powershell
+dbt run --select staging+
+dbt test --select staging+
+```
 
-| Variable | Value |
-|----------|-------|
-| `DBT_DATABRICKS_CATALOG` | `dev` |
-| `DBT_DATABRICKS_SCHEMA` | `silver` (dbt model default) |
-| `DBT_RAW_SCHEMA` | `bronze` (raw sources) |
+## Connection
 
-Marts write to `dev.gold`, staging/intermediate write to `dev.silver`.
+Profile: `databricks_free` (see `profiles/profiles.yml`)  
+Secrets: `.env` (gitignored)
